@@ -1,0 +1,6 @@
+{
+  "name": "NMDP Tabling Session Invitation & Engagement Tracker",
+  "description": "Clean modern invitation campaign, dynamic QR code generator, and real-time interaction tracking database for the UC Berkeley NMDP stem cell registry drive.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-editorial {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+  .font-sans-ui {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Atmospheric frosted glass and ethereal styling matching mobile design aesthetic */
+.ethereal-glass {
+  background: rgba(13, 22, 32, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ethereal-card-gradient {
+  background: radial-gradient(120% 120% at 50% 10%, #2f4b63 0%, #152636 50%, #0c141d 100%);
+}
+
+.ethereal-pill {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(12px);
+}
+
+.glow-aura {
+  box-shadow: 0 0 45px -5px rgba(110, 168, 204, 0.25);
+}
+
+.glow-orb {
+  background: radial-gradient(circle, rgba(138, 180, 206, 0.35) 0%, rgba(56, 88, 115, 0.15) 50%, transparent 70%);
+}
+
