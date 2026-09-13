@@ -25,29 +25,60 @@ export default function App() {
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initialize analytics on page load
+  // Initialize analytics on page load & active real-time polling
   useEffect(() => {
-    trackVisitOnLoad();
-    fetchStats();
+    let isMounted = true;
+
+    const initTracking = async () => {
+      // 1. First record the visit to backend
+      await trackVisitOnLoad();
+      // 2. Fetch fresh stats immediately after database write
+      if (isMounted) {
+        await fetchStats();
+      }
+    };
+
+    initTracking();
 
     // Check if user came via QR code or direct link with target=event_portal
     const params = new URLSearchParams(window.location.search);
     if (params.get('target') === 'event_portal') {
       setCurrentView('portal');
     }
+
+    // Real-time polling every 2.5 seconds so mobile scans/visits immediately reflect on desktop screen!
+    const pollTimer = setInterval(() => {
+      fetchStats();
+    }, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollTimer);
+    };
   }, []);
 
+  // When switching views (especially to 'analytics'), immediately fetch latest stats
+  useEffect(() => {
+    fetchStats();
+  }, [currentView]);
+
   const fetchStats = async () => {
-    setIsLoadingStats(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     try {
       const res = await fetch('/api/stats', { signal: controller.signal });
       if (res.ok) {
         const data = await res.json();
         if (data && typeof data.totalVisits === 'number') {
-          setStats(data);
+          setStats((prev) => {
+            // If new visits arrived from another device while viewing, notify the user!
+            if (prev && typeof prev.totalVisits === 'number' && data.totalVisits > prev.totalVisits) {
+              const diff = data.totalVisits - prev.totalVisits;
+              showToast(`✨ 实时同步：检测到 ${diff} 次新的手机/微信/浏览器访问，数据已刷新！`);
+            }
+            return data;
+          });
           cacheStatsLocally(data);
         }
       }
@@ -56,7 +87,6 @@ export default function App() {
       console.debug('Stats fetch completed with local fallback:', err);
     } finally {
       clearTimeout(timeoutId);
-      setIsLoadingStats(false);
     }
   };
 

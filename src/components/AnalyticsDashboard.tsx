@@ -218,11 +218,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <div className="text-slate-200 font-semibold flex items-center gap-2">
               <span>100% 真实数据通道已就绪 (Real Database Ready)</span>
               <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-[10px] text-emerald-300 font-mono">
-                Clean State
+                Clean State • 2.5s Live Polling
               </span>
             </div>
             <p className="text-slate-400 text-[11px] leading-relaxed mt-0.5">
-              已彻底删除旧版模拟统计。当前后台为全栈持久化数据库，已准备好在 Instagram 发布。同学每次点击快拍贴纸、个人简介链接、扫描 QR 码、添加日历或提交 Swab 承诺，系统将全自动记录 100% 真实数据。
+              后台全栈数据库已启用 2.5 秒极速轮询。手机或微信扫码打开时，电脑端屏幕将自动跳动更新。注：若手机自带扫码受 Google 内部沙盒拦截，可使用右上角「Share」生成的公开访问链接测试。
             </p>
           </div>
         </div>

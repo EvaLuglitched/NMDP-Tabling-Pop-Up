@@ -12,7 +12,7 @@ export function getOrCreateSessionId(): string {
   return id;
 }
 
-export async function trackVisitOnLoad(): Promise<void> {
+export async function trackVisitOnLoad(): Promise<boolean> {
   try {
     const sessionId = getOrCreateSessionId();
     const urlParams = new URLSearchParams(window.location.search);
@@ -21,9 +21,10 @@ export async function trackVisitOnLoad(): Promise<void> {
     const campaign = urlParams.get('utm_campaign') || 'nmdp_berkeley_fall26';
     const referrer = document.referrer || 'direct';
 
-    await fetch('/api/track/visit', {
+    const res = await fetch('/api/track/visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
       body: JSON.stringify({
         source,
         medium,
@@ -32,28 +33,33 @@ export async function trackVisitOnLoad(): Promise<void> {
         sessionId,
       }),
     });
+    return res.ok;
   } catch (err) {
-    console.debug('Visit tracking skipped/failed:', err);
+    console.warn('Visit tracking request skipped or network offline:', err);
+    return false;
   }
 }
 
 export async function trackEvent(
   type: 'qr_scanned' | 'pledge_submitted' | 'calendar_add' | 'map_opened' | 'quiz_answered' | 'share_clicked' | 'faq_toggled' | 'invitation_downloaded' | 'flyer_printed',
   metadata?: Record<string, any>
-): Promise<void> {
+): Promise<boolean> {
   try {
     const sessionId = getOrCreateSessionId();
-    await fetch('/api/track/event', {
+    const res = await fetch('/api/track/event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
       body: JSON.stringify({
         sessionId,
         type,
         metadata: metadata || {},
       }),
     });
+    return res.ok;
   } catch (err) {
-    console.debug('Event tracking error:', err);
+    console.warn('Event tracking error:', err);
+    return false;
   }
 }
 

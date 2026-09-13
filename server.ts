@@ -15,6 +15,17 @@ import {
 const app = express();
 const PORT = 3000;
 
+// Enable CORS for mobile devices, external browser previews, and in-app browsers
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(express.json());
 
 // Normalize path if Vercel serverless function receives rewritten paths without /api
