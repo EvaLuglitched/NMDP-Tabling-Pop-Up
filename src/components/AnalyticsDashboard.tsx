@@ -23,6 +23,12 @@ import {
 } from 'lucide-react';
 import { CampaignStats, PledgeItem } from '../types';
 import { trackEvent } from '../utils/analytics';
+import { 
+  DEFAULT_CAMPAIGN_STATS, 
+  getInitialPledges, 
+  cachePledgesLocally, 
+  generateInstantSummary 
+} from '../utils/defaultStats';
 
 interface AnalyticsDashboardProps {
   stats: CampaignStats | null;
@@ -37,50 +43,66 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   onRefreshStats,
   onSimulateQrScan,
 }) => {
+  const currentStats = stats || DEFAULT_CAMPAIGN_STATS;
   const [copiedReport, setCopiedReport] = useState(false);
   const [reportTone, setReportTone] = useState<'standard' | 'impact' | 'design'>('standard');
-  const [generatedSummary, setGeneratedSummary] = useState<string>('');
+  const [generatedSummary, setGeneratedSummary] = useState<string>(() =>
+    generateInstantSummary(currentStats, 'standard')
+  );
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-  const [pledgesList, setPledgesList] = useState<PledgeItem[]>([]);
+  const [pledgesList, setPledgesList] = useState<PledgeItem[]>(() => getInitialPledges());
   const [activeTab, setActiveTab] = useState<'overview' | 'pledges'>('overview');
+
+  // Keep summary synchronized in 0ms whenever stats or tone changes
+  useEffect(() => {
+    setGeneratedSummary(generateInstantSummary(currentStats, reportTone));
+  }, [currentStats.totalVisits, currentStats.qrVisits, currentStats.totalPledges, reportTone]);
 
   useEffect(() => {
     fetchPledges();
-  }, [stats?.totalPledges]);
-
-  useEffect(() => {
-    if (stats) {
-      generateAssignmentReport(reportTone);
-    }
-  }, [stats?.totalVisits, stats?.qrVisits, stats?.totalPledges, reportTone]);
+  }, [currentStats.totalPledges]);
 
   const fetchPledges = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const res = await fetch('/api/pledges');
-      const data = await res.json();
-      if (data.pledges) {
-        setPledgesList(data.pledges);
+      const res = await fetch('/api/pledges', { signal: controller.signal });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.pledges && Array.isArray(data.pledges)) {
+          setPledgesList(data.pledges);
+          cachePledgesLocally(data.pledges);
+        }
       }
     } catch (err) {
-      console.error('Error fetching pledges:', err);
+      console.debug('Using cached pledges fallback:', err);
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 
-  const generateAssignmentReport = async (tone: 'standard' | 'impact' | 'design') => {
+  // Optional on-demand AI refinement via Gemini
+  const handleRegenerateWithAi = async () => {
     setIsGeneratingSummary(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
     try {
       const res = await fetch('/api/generate-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ style: tone }),
+        body: JSON.stringify({ style: reportTone }),
+        signal: controller.signal,
       });
-      const data = await res.json();
-      if (data.summary) {
-        setGeneratedSummary(data.summary);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.summary) {
+          setGeneratedSummary(data.summary);
+        }
       }
     } catch (err) {
-      console.error('Error generating summary:', err);
+      console.debug('AI generation skipped or timed out, keeping high-quality report:', err);
     } finally {
+      clearTimeout(timeoutId);
       setIsGeneratingSummary(false);
     }
   };
@@ -120,22 +142,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     window.open('/api/export-data', '_blank');
   };
 
-  if (!stats) {
-    return (
-      <div className="w-full max-w-5xl mx-auto py-20 text-center space-y-3">
-        <RefreshCw className="w-8 h-8 text-sky-400 animate-spin mx-auto" />
-        <p className="font-editorial text-xl text-white">Connecting to live campaign database...</p>
-      </div>
-    );
-  }
-
   const microEventsCount =
-    stats.events.calendar_add +
-    stats.events.map_opened +
-    stats.events.quiz_answered +
-    stats.events.share_clicked +
-    stats.events.invitation_downloaded +
-    stats.events.flyer_printed;
+    currentStats.events.calendar_add +
+    currentStats.events.map_opened +
+    currentStats.events.quiz_answered +
+    currentStats.events.share_clicked +
+    currentStats.events.invitation_downloaded +
+    currentStats.events.flyer_printed;
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 pb-16">
@@ -230,8 +243,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <span className="text-[10px] font-bold uppercase tracking-wider text-sky-300">Total Views</span>
             <TrendingUp className="w-4 h-4 text-sky-300" />
           </div>
-          <div className="font-editorial text-3xl sm:text-4xl text-white font-normal">{stats.totalVisits}</div>
-          <div className="text-[11px] text-slate-400">{stats.uniqueVisitors} unique visitors</div>
+          <div className="font-editorial text-3xl sm:text-4xl text-white font-normal">{currentStats.totalVisits}</div>
+          <div className="text-[11px] text-slate-400">{currentStats.uniqueVisitors} unique visitors</div>
           <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-sky-400/10 blur-xl pointer-events-none" />
         </div>
 
@@ -241,8 +254,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300">QR Code Opens</span>
             <QrCode className="w-4 h-4 text-purple-300" />
           </div>
-          <div className="font-editorial text-3xl sm:text-4xl text-white font-normal">{stats.qrVisits}</div>
-          <div className="text-[11px] text-emerald-400 font-medium">{stats.qrOpenRate}% campaign open rate</div>
+          <div className="font-editorial text-3xl sm:text-4xl text-white font-normal">{currentStats.qrVisits}</div>
+          <div className="text-[11px] text-emerald-400 font-medium">{currentStats.qrOpenRate}% campaign open rate</div>
           <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-purple-400/10 blur-xl pointer-events-none" />
         </div>
 
@@ -252,8 +265,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300">Student Pledges</span>
             <Heart className="w-4 h-4 text-rose-400 fill-rose-400/40" />
           </div>
-          <div className="font-editorial text-3xl sm:text-4xl text-white font-normal">{stats.totalPledges}</div>
-          <div className="text-[11px] text-slate-400">{stats.conversionRate}% pledge conversion</div>
+          <div className="font-editorial text-3xl sm:text-4xl text-white font-normal">{currentStats.totalPledges}</div>
+          <div className="text-[11px] text-slate-400">{currentStats.conversionRate}% pledge conversion</div>
           <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-rose-400/10 blur-xl pointer-events-none" />
         </div>
 
@@ -264,7 +277,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <Activity className="w-4 h-4 text-amber-300" />
           </div>
           <div className="font-editorial text-3xl sm:text-4xl text-white font-normal">{microEventsCount}</div>
-          <div className="text-[11px] text-slate-400">{stats.events.calendar_add} cal syncs • {stats.events.map_opened} maps</div>
+          <div className="text-[11px] text-slate-400">{currentStats.events.calendar_add} cal syncs • {currentStats.events.map_opened} maps</div>
           <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-amber-400/10 blur-xl pointer-events-none" />
         </div>
       </div>
@@ -356,7 +369,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               Length: exactly 5 sentences • Meets 3–6 sentence assignment requirement
             </span>
             <span className="font-mono text-sky-300">
-              {stats.totalVisits} views | {stats.qrVisits} QR scans | {stats.totalPledges} pledges
+              {currentStats.totalVisits} views | {currentStats.qrVisits} QR scans | {currentStats.totalPledges} pledges
             </span>
           </div>
         </div>
@@ -396,9 +409,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </h4>
 
             <div className="space-y-3">
-              {Object.entries(stats.sources).map(([sourceKey, countVal]) => {
+              {Object.entries(currentStats.sources).map(([sourceKey, countVal]) => {
                 const countNum = typeof countVal === 'number' ? countVal : Number(countVal) || 0;
-                const pct = stats.totalVisits > 0 ? Math.round((countNum / stats.totalVisits) * 100) : 0;
+                const pct = currentStats.totalVisits > 0 ? Math.round((countNum / currentStats.totalVisits) * 100) : 0;
                 let label = sourceKey.replace(/_/g, ' ');
                 if (sourceKey === 'amazon_hub_flyer') label = 'Amazon Hub Locker Flyer (Event Site)';
                 if (sourceKey === 'campus_poster_sproul') label = 'Sproul Plaza Campus Notice Board';
@@ -435,15 +448,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
                   <div className="text-[11px] text-slate-400">Mobile (QR)</div>
-                  <div className="font-editorial text-2xl text-white mt-1">{stats.devices.mobile}</div>
+                  <div className="font-editorial text-2xl text-white mt-1">{currentStats.devices.mobile}</div>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
                   <div className="text-[11px] text-slate-400">Desktop</div>
-                  <div className="font-editorial text-2xl text-white mt-1">{stats.devices.desktop}</div>
+                  <div className="font-editorial text-2xl text-white mt-1">{currentStats.devices.desktop}</div>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
                   <div className="text-[11px] text-slate-400">Tablet</div>
-                  <div className="font-editorial text-2xl text-white mt-1">{stats.devices.tablet}</div>
+                  <div className="font-editorial text-2xl text-white mt-1">{currentStats.devices.tablet}</div>
                 </div>
               </div>
             </div>
@@ -457,19 +470,19 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between">
                   <span className="text-slate-300">Calendar Syncs</span>
-                  <span className="font-bold text-white">{stats.events.calendar_add}</span>
+                  <span className="font-bold text-white">{currentStats.events.calendar_add}</span>
                 </div>
                 <div className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between">
                   <span className="text-slate-300">Map Navigations</span>
-                  <span className="font-bold text-white">{stats.events.map_opened}</span>
+                  <span className="font-bold text-white">{currentStats.events.map_opened}</span>
                 </div>
                 <div className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between">
                   <span className="text-slate-300">Myth Quizzes</span>
-                  <span className="font-bold text-white">{stats.events.quiz_answered}</span>
+                  <span className="font-bold text-white">{currentStats.events.quiz_answered}</span>
                 </div>
                 <div className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between">
                   <span className="text-slate-300">Links Shared</span>
-                  <span className="font-bold text-white">{stats.events.share_clicked}</span>
+                  <span className="font-bold text-white">{currentStats.events.share_clicked}</span>
                 </div>
               </div>
             </div>
@@ -526,7 +539,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </h4>
 
         <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-          {stats.recentActivities.map((act) => (
+          {currentStats.recentActivities.map((act) => (
             <div
               key={act.id}
               className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between text-xs"

@@ -208,16 +208,22 @@ Writing Style: ${style} (e.g. 'standard', 'impact_focused', or 'design_process')
 Return ONLY the 3-6 sentence paragraph. No extra markdown headings or bullet points.`;
 
       try {
-        const response = await gemini.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-        });
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('AI generation timed out')), 2000)
+        );
+        const response = await Promise.race([
+          gemini.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+          }),
+          timeoutPromise,
+        ]);
         const text = response.text?.trim();
         if (text) {
           return res.json({ summary: text, isAiGenerated: true, stats });
         }
       } catch (genErr) {
-        console.warn('Gemini generation failed, using structured template fallback:', genErr);
+        console.warn('Gemini generation skipped or timed out, using fast fallback:', genErr);
       }
     }
 
