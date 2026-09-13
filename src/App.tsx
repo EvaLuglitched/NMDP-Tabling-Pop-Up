@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Navbar, AppView } from './components/Navbar';
 import { StartSavingLivesView } from './components/StartSavingLivesView';
 import { InvitationCard } from './components/InvitationCard';
@@ -212,6 +213,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <Analytics />
     </div>
   );
 }
