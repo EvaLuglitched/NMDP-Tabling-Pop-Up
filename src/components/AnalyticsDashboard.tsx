@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { CampaignStats, PledgeItem } from '../types';
 import { trackEvent } from '../utils/analytics';
+import { adminFetch, getAdminToken, setAdminToken } from '../utils/admin';
 import { 
   DEFAULT_CAMPAIGN_STATS, 
   getInitialPledges, 
@@ -52,6 +53,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [pledgesList, setPledgesList] = useState<PledgeItem[]>(() => getInitialPledges());
   const [activeTab, setActiveTab] = useState<'overview' | 'pledges'>('overview');
+  const [adminTokenInput, setAdminTokenInput] = useState<string>(() => getAdminToken());
+  const [adminUnlocked, setAdminUnlocked] = useState<boolean>(() => Boolean(getAdminToken()));
+  const [adminError, setAdminError] = useState<string>('');
 
   // Keep summary synchronized in 0ms whenever stats or tone changes
   useEffect(() => {
@@ -63,10 +67,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   }, [currentStats.totalPledges]);
 
   const fetchPledges = async () => {
+    if (!getAdminToken()) return;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const res = await fetch('/api/pledges', { signal: controller.signal });
+      const res = await adminFetch('/api/pledges', { signal: controller.signal });
       if (res.ok) {
         const data = await res.json();
         if (data.pledges && Array.isArray(data.pledges)) {
@@ -87,7 +92,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
     try {
-      const res = await fetch('/api/generate-summary', {
+      const res = await adminFetch('/api/generate-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ style: reportTone }),
@@ -115,12 +120,42 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     setTimeout(() => setCopiedReport(false), 2200);
   };
 
+  const handleUnlockAdmin = async () => {
+    setAdminError('');
+    setAdminToken(adminTokenInput.trim());
+    try {
+      const res = await adminFetch('/api/pledges');
+      if (res.ok) {
+        setAdminUnlocked(true);
+        fetchPledges();
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 503) {
+        setAdminError(data.detail || '服务器还没有配置 ADMIN_TOKEN 环境变量。');
+      } else {
+        setAdminError('管理员密码不正确。');
+      }
+      setAdminToken('');
+      setAdminUnlocked(false);
+    } catch {
+      setAdminError('无法连接服务器，请稍后再试。');
+    }
+  };
+
+  const handleLockAdmin = () => {
+    setAdminToken('');
+    setAdminTokenInput('');
+    setAdminUnlocked(false);
+    setPledgesList([]);
+  };
+
   const handleClearToZero = async () => {
     if (!window.confirm('确定将所有统计数据清空为 0 吗？清空后可以开始收集 100% 真实用户的扫码与提交。')) {
       return;
     }
     try {
-      await fetch('/api/clear-all', { method: 'POST' });
+      await adminFetch('/api/clear-all', { method: 'POST' });
       onRefreshStats();
       fetchPledges();
     } catch (err) {
@@ -130,7 +165,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   const handleResetDemo = async () => {
     try {
-      await fetch('/api/reset-demo', { method: 'POST' });
+      await adminFetch('/api/reset-demo', { method: 'POST' });
       onRefreshStats();
       fetchPledges();
     } catch (err) {
@@ -139,7 +174,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   };
 
   const handleExportJson = () => {
-    window.open('/api/export-data', '_blank');
+    window.open(`/api/export-data?token=${encodeURIComponent(getAdminToken())}`, '_blank');
   };
 
   const microEventsCount =
@@ -152,6 +187,51 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 pb-16">
+      {/* Admin gate: the pledge roster and reset/export actions are protected */}
+      {!adminUnlocked ? (
+        <div className="ethereal-glass rounded-3xl p-5 shadow-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-300">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-editorial text-lg text-white font-medium">管理员登录 (Admin Access)</h3>
+              <p className="text-xs text-slate-400">
+                下方的总览数据对所有人公开；学生姓名名单、清空数据与导出功能需要管理员密码。
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="password"
+              value={adminTokenInput}
+              onChange={(e) => setAdminTokenInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleUnlockAdmin(); }}
+              placeholder="输入 ADMIN_TOKEN"
+              className="flex-1 min-w-[200px] px-4 py-2 rounded-full bg-white/5 border border-white/15 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400/50"
+            />
+            <button
+              onClick={handleUnlockAdmin}
+              className="px-4 py-2 rounded-full bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              解锁
+            </button>
+          </div>
+          {adminError && (
+            <p className="text-rose-300 text-xs mt-2">{adminError}</p>
+          )}
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <button
+            onClick={handleLockAdmin}
+            className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/15 text-slate-400 hover:text-white text-[11px] font-semibold transition-colors cursor-pointer"
+          >
+            已解锁管理员 · 点击退出
+          </button>
+        </div>
+      )}
+
       {/* Top Controls Toolbar */}
       <div className="ethereal-glass rounded-3xl p-5 shadow-2xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -173,6 +253,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {adminUnlocked && (
+            <>
           <button
             onClick={handleClearToZero}
             className="px-3 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-400/30 text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -189,6 +271,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <Download className="w-3.5 h-3.5" />
             <span>导出 JSON</span>
           </button>
+            </>
+          )}
           <button
             onClick={onSimulateQrScan}
             className="px-3.5 py-1.5 rounded-full bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -218,11 +302,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <div className="text-slate-200 font-semibold flex items-center gap-2">
               <span>100% 真实数据通道已就绪 (Real Database Ready)</span>
               <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-[10px] text-emerald-300 font-mono">
-                Clean State • 2.5s Live Polling
+                Clean State • Postgres • 10s Live Polling
               </span>
             </div>
             <p className="text-slate-400 text-[11px] leading-relaxed mt-0.5">
-              后台全栈数据库已启用 2.5 秒极速轮询。手机或微信扫码打开时，电脑端屏幕将自动跳动更新。注：若手机自带扫码受 Google 内部沙盒拦截，可使用右上角「Share」生成的公开访问链接测试。
+              数据存储在 Postgres 数据库中，跨设备、跨时间持久保存。打开本页面时每 10 秒自动刷新一次，手机扫码访问会在电脑端同步显示。
             </p>
           </div>
         </div>

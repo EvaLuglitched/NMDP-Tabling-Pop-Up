@@ -46,16 +46,21 @@ export default function App() {
       setCurrentView('portal');
     }
 
-    // Real-time polling every 2.5 seconds so mobile scans/visits immediately reflect on desktop screen!
-    const pollTimer = setInterval(() => {
-      fetchStats();
-    }, 2500);
-
     return () => {
       isMounted = false;
-      clearInterval(pollTimer);
     };
   }, []);
+
+  // Live polling, but only while the analytics dashboard is actually open.
+  // Polling every visitor's browser every 2.5s would burn through Vercel's
+  // function invocation quota during the campaign and get the site throttled.
+  useEffect(() => {
+    if (currentView !== 'analytics') return;
+    const pollTimer = setInterval(() => {
+      fetchStats();
+    }, 10000);
+    return () => clearInterval(pollTimer);
+  }, [currentView]);
 
   // When switching views (especially to 'analytics'), immediately fetch latest stats
   useEffect(() => {

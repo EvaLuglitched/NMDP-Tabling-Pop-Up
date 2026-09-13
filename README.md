@@ -1,72 +1,130 @@
 # NMDP Tabling Pop-Up Campaign & Interactive Portal
 ### UC Berkeley MDes × NMDP Blood & Pediatric Cancer Awareness Drive (Sept 21, 2026)
 
-An interactive, multi-channel campaign experience featuring a responsive visual invitation poster, dynamic QR code tracking system, campus pledge registration portal, and real-time analytics dashboard.
+An interactive campaign experience: a responsive invitation poster, dynamic QR
+code tracking, a campus pledge registration portal, and a live analytics
+dashboard backed by Postgres.
 
 ---
 
-## 🚀 1-Click Deploy to Vercel via GitHub
+## ⚡ Setup (do this before the campaign goes live)
 
-This project is pre-configured with `vercel.json` and a Serverless Function entry point in `/api/index.ts` for zero-configuration deployment on Vercel.
+The app needs two environment variables. **Without `DATABASE_URL` no data is
+saved at all** — visits and pledges vanish within minutes.
 
-### Steps:
-1. **Push this repository to GitHub**:
-   - In AI Studio, click the top-right Settings menu -> **Export to GitHub** (or push using git CLI).
-2. **Import to Vercel**:
-   - Go to [vercel.com](https://vercel.com) and log in with your GitHub account.
-   - Click **Add New...** -> **Project**.
-   - Select this GitHub repository.
-3. **Deployment Configuration** (Auto-detected):
-   - **Framework Preset**: `Vite`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-4. **Click Deploy**:
-   - Within 1–2 minutes, Vercel will provide your live production URL (e.g., `https://your-campaign.vercel.app`).
-   - Anyone on campus can scan the QR codes or open the link directly **without requiring any Google login**!
+| Variable | Required | What it does |
+|---|---|---|
+| `DATABASE_URL` | **Yes** | Postgres connection string. Every visit, event and pledge is stored here. |
+| `ADMIN_TOKEN` | **Yes** | Password for the dashboard. Protects the student roster and the clear/export actions. |
+| `GEMINI_API_KEY` | No | Enables AI-written assignment reflections. Falls back to a template using the real numbers. |
 
----
+### 1. Create a Postgres database
 
-## 📱 Features & Architecture
+Any Postgres works — Vercel Postgres, Neon, or Supabase. The fastest path is
+Vercel's own: **Vercel dashboard → Storage → Create Database → Postgres**, then
+connect it to this project. `DATABASE_URL` is injected automatically.
 
-### 1. Ethereal Device Showcase & Invitation Studio
-- **Reference Aesthetic**: Translucent frosted glass layers, misty twilight cerulean gradients, and the cellular blossom life emblem.
-- **Dynamic QR Generation**: QR codes automatically encode your current domain (e.g. `your-domain.vercel.app`) with location-specific UTM parameters:
-  - Outside Amazon Hub Locker (`amazon_hub_flyer`)
-  - Sproul Plaza Posters (`campus_poster_sproul`)
-  - Moffitt Library Study Hall Tables (`moffitt_library_table`)
-  - Digital Social / MDes Slack (`mdes_slack`)
-- **Print Mode**: High-resolution print styling for physical flyers and campus handouts.
+If you use Supabase instead, copy the **Connection Pooling** URI (port `6543`),
+not the direct connection string.
 
-### 2. Event Landing & Registration Portal
-- Event details: **Monday, September 21, 2026 (10:00 AM – 12:00 PM PT)** outside Amazon Hub Locker (2495 Bancroft Way, Berkeley).
-- **Interactive Myth-Buster**: 10-second quiz explaining Peripheral Blood Stem Cell (PBSC) donation.
-- **Pledge Form**: Students register their name, affiliation, and time preference to stop by and get swabbed. Pledges are saved to the backend database and confirmation cards are issued with 1-click Google Calendar integration.
+Tables are created automatically on first request — there is no migration step.
 
-### 3. Real-Time Analytics & Assignment Reflection
-- Live tracking of page visits, device types (Mobile vs. Desktop), QR scan conversions, and pledge submissions.
-- **100% Real Data Mode**: Reset to 0 with 1 click to collect clean, real-time student interaction metrics.
-- **AI Summary Generator**: 1-click generation of the 3–6 sentence reflection write-up for your Google Slide deck and course assignment.
-- **Raw JSON Export**: Download raw event logs anytime.
+### 2. Set `ADMIN_TOKEN`
+
+In **Vercel → Settings → Environment Variables**, add `ADMIN_TOKEN` with a long
+random value. This is the password you'll type into the dashboard.
+
+Skipping this doesn't expose anything — the protected endpoints return
+"Admin access is not configured" until it's set — but the roster stays locked.
+
+### 3. Redeploy
+
+Environment variables only take effect on a new deployment.
+
+### 4. Verify
+
+Open `https://your-domain.vercel.app/api/health`. You want:
+
+```json
+{ "status": "ok", "storage": "postgres", "adminConfigured": true }
+```
+
+If `storage` says `"memory"`, `DATABASE_URL` isn't reaching the app and nothing
+is being saved.
 
 ---
 
 ## 💻 Local Development
 
 ```bash
-# Install dependencies
 npm install
+cp .env.example .env        # then fill in DATABASE_URL and ADMIN_TOKEN
+npm run dev                 # http://localhost:3000
+```
 
-# Start local full-stack dev server (port 3000)
-npm run dev
+The dev server runs the API and the Vite frontend on one port, so `/api/*` calls
+behave exactly as they do in production.
 
-# Build for production
-npm run build
-
-# Preview production build
-npm run start
+```bash
+npm run build               # build frontend + server bundle
+npm run start               # preview the production build
+npm run lint                # typecheck
 ```
 
 ---
 
-## 🛡️ Campus Ethics & Privacy
-Designed by UC Berkeley Master of Design (MDes) students in full compliance with the UC Berkeley Student Code of Conduct. Student contact info is masked for privacy.
+## 🏗️ Architecture
+
+```
+src/                 React frontend (Vite + Tailwind)
+server.ts            Express API — all routes live here
+server/db.ts         Postgres storage layer (falls back to memory if unset)
+api/index.ts         Vercel serverless entry point → re-exports the Express app
+vercel.json          Routing: /api/* → the function, everything else → the SPA
+```
+
+### API
+
+Public:
+
+| Route | Purpose |
+|---|---|
+| `GET /api/health` | Storage + config status |
+| `POST /api/track/visit` | Record a page/QR visit |
+| `POST /api/track/event` | Record a micro-interaction |
+| `POST /api/pledge` | Submit a student pledge |
+| `GET /api/stats` | Aggregate counts (no personal data) |
+
+Admin only — require the `X-Admin-Token` header:
+
+| Route | Purpose |
+|---|---|
+| `GET /api/pledges` | Full pledge roster (contains real names) |
+| `GET /api/export-data` | Raw JSON export |
+| `POST /api/generate-summary` | Assignment reflection write-up |
+| `POST /api/clear-all` | Wipe all data |
+| `POST /api/reset-demo` | Alias of clear-all |
+
+---
+
+## 🛡️ Privacy
+
+Contact details are masked before they are ever written to the database — the
+raw email or phone number is never stored. The pledge roster is admin-only, so
+student names are not visible to anyone holding the campaign link. The public
+`/api/stats` endpoint returns counts only.
+
+---
+
+## 📋 Deployment notes
+
+`vercel.json` rewrites `/api/<route>` to the serverless function while carrying
+the route through a `__path` query parameter, which `server.ts` restores before
+Express routing. This exists because a plain rewrite drops the sub-path, which
+made every API call return an HTML 404 and surface in the UI as
+"Connection error".
+
+Storage is Postgres rather than a JSON file because Vercel functions are
+stateless and short-lived: each request may land on a fresh instance with its
+own empty `/tmp`, so file-based writes are lost and never shared between
+instances.
