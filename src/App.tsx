@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, AppView } from './components/Navbar';
-import { MobileShowcaseView } from './components/MobileShowcaseView';
+import { StartSavingLivesView } from './components/StartSavingLivesView';
 import { InvitationCard } from './components/InvitationCard';
-import { CampusMockup } from './components/CampusMockup';
 import { EventLandingView } from './components/EventLandingView';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { CampaignStats, PledgeItem } from './types';
@@ -18,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<AppView>('showcase');
+  const [currentView, setCurrentView] = useState<AppView>('home');
   const [stats, setStats] = useState<CampaignStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -136,12 +135,12 @@ export default function App() {
 
       {/* Main Campaign Canvas */}
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative z-10">
-        {currentView === 'showcase' && (
-          <MobileShowcaseView
+        {currentView === 'home' && (
+          <StartSavingLivesView
             stats={stats}
-            onSimulateScan={handleSimulateScan}
-            onOpenPortal={() => setCurrentView('portal')}
-            onOpenAnalytics={() => setCurrentView('analytics')}
+            onNavigateToInvitation={() => setCurrentView('invitation')}
+            onNavigateToPortal={() => setCurrentView('portal')}
+            onNavigateToAnalytics={() => setCurrentView('analytics')}
           />
         )}
 
@@ -165,12 +164,6 @@ export default function App() {
             isLoading={isLoadingStats}
             onRefreshStats={fetchStats}
             onSimulateQrScan={handleSimulateScan}
-          />
-        )}
-
-        {currentView === 'mockup' && (
-          <CampusMockup
-            onBackToCard={() => setCurrentView('invitation')}
           />
         )}
       </main>

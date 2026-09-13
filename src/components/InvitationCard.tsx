@@ -163,35 +163,26 @@ export const InvitationCard: React.FC<InvitationCardProps> = ({ onSimulateScan, 
 
       {/* Main Grid: Card on Left (Col 7), Campaign Placement & Details on Right (Col 5) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: The Ethereal Invitation Card with Phone-Frame Styling */}
+        {/* Left: The Ethereal Invitation Card & Interactive QR Pass */}
         <div className="lg:col-span-7 flex flex-col items-center">
           <div
             ref={cardRef}
             id="printable-invitation"
-            className={`w-full max-w-md rounded-[38px] p-7 sm:p-9 shadow-2xl transition-all duration-300 relative overflow-hidden border ${
+            className={`w-full max-w-lg rounded-3xl sm:rounded-[36px] p-6 sm:p-9 shadow-2xl transition-all duration-300 relative overflow-hidden border ${
               theme === 'ethereal'
-                ? 'bg-gradient-to-b from-[#8ab4ce]/90 via-[#3a617d] to-[#091118] text-white border-white/25 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)]'
+                ? 'bg-gradient-to-b from-[#8ab4ce]/95 via-[#3a617d] to-[#091118] text-white border-white/25 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)]'
                 : theme === 'berkeley'
                 ? 'bg-gradient-to-b from-[#003262] via-[#00274D] to-[#001D38] text-white border-amber-400/40'
                 : 'bg-white text-slate-950 border-slate-300 shadow-xl'
             }`}
           >
-            {/* Phone Notch / Status Bar Simulation */}
-            <div className="flex items-center justify-between text-[11px] font-semibold mb-6 opacity-80 px-1">
-              <span>9:41</span>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-2 rounded-sm border border-current inline-block" />
-                <span>5G</span>
-              </div>
-            </div>
-
-            {/* Top Pill Badges */}
-            <div className="flex items-center justify-between mb-8">
+            {/* Header badges and date row */}
+            <div className="flex items-center justify-between mb-6">
               <div className="ethereal-pill px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-medium tracking-wider uppercase flex items-center gap-1.5 text-white/90">
                 <Sparkles className="w-3 h-3 text-sky-300" />
-                September Awareness
+                September Awareness Drive
               </div>
-              <div className="text-[11px] tracking-widest text-white/80 uppercase font-medium">
+              <div className="text-[11px] tracking-widest text-white/80 uppercase font-mono">
                 Sept 21, 2026
               </div>
             </div>

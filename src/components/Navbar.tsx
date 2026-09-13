@@ -2,14 +2,13 @@ import React from 'react';
 import { 
   QrCode, 
   BarChart3, 
-  Camera, 
   Globe,
   Sparkles,
   Zap,
-  Smartphone
+  Heart
 } from 'lucide-react';
 
-export type AppView = 'showcase' | 'invitation' | 'portal' | 'analytics' | 'mockup';
+export type AppView = 'home' | 'invitation' | 'portal' | 'analytics';
 
 interface NavbarProps {
   currentView: AppView;
@@ -25,11 +24,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSimulateScan,
 }) => {
   return (
-    <header className="w-full bg-[#070b10]/85 border-b border-white/10 sticky top-0 z-50 backdrop-blur-2xl">
+    <header className="w-full bg-[#070b10]/90 border-b border-white/10 sticky top-0 z-50 backdrop-blur-2xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
           {/* Logo & Identity */}
-          <div className="flex items-center gap-3 flex-shrink-0 cursor-pointer" onClick={() => onSelectView('showcase')}>
+          <div className="flex items-center gap-3 flex-shrink-0 cursor-pointer" onClick={() => onSelectView('home')}>
             {/* Blossom geometric icon */}
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400/20 to-indigo-500/20 border border-white/20 flex items-center justify-center shadow-lg">
               <svg className="w-6 h-6 text-white" viewBox="0 0 100 100" fill="currentColor">
@@ -59,72 +58,61 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Navigation View Switcher Tabs (Ethereal Floating Dock Bar) */}
-          <nav className="flex items-center bg-black/50 p-1 rounded-full border border-white/10 text-xs font-semibold">
-            {/* Triptych Showcase Mode */}
+          {/* Navigation View Switcher Tabs (Direct Full-Screen Web Interface) */}
+          <nav className="flex items-center bg-black/60 p-1 rounded-full border border-white/15 text-xs font-semibold overflow-x-auto max-w-full">
+            {/* 1. Start Saving Lives (Hero Intro) */}
             <button
-              onClick={() => onSelectView('showcase')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                currentView === 'showcase'
+              onClick={() => onSelectView('home')}
+              className={`px-3 sm:px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                currentView === 'home'
                   ? 'bg-white text-slate-950 font-bold shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Device Showcase</span>
-              <span className="md:hidden">Showcase</span>
+              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+              <span>Start Saving Lives</span>
             </button>
 
+            {/* 2. Invitation Card & QR */}
             <button
               onClick={() => onSelectView('invitation')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 sm:px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 currentView === 'invitation'
                   ? 'bg-white text-slate-950 font-bold shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <QrCode className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Invitation Card</span>
-              <span className="md:hidden">Invite</span>
+              <span className="hidden sm:inline">Invitation Card &amp; QR</span>
+              <span className="sm:hidden">Invite &amp; QR</span>
             </button>
 
+            {/* 3. Event Portal */}
             <button
               onClick={() => onSelectView('portal')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 sm:px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 currentView === 'portal'
                   ? 'bg-white text-slate-950 font-bold shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Event Portal</span>
-              <span className="md:hidden">Portal</span>
+              <span className="hidden sm:inline">Event Portal</span>
+              <span className="sm:hidden">Portal</span>
             </button>
 
+            {/* 4. Real-Time Report */}
             <button
               onClick={() => onSelectView('analytics')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 sm:px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 currentView === 'analytics'
                   ? 'bg-white text-slate-950 font-bold shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Real-Time Report</span>
-              <span className="md:hidden">Report</span>
-            </button>
-
-            <button
-              onClick={() => onSelectView('mockup')}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                currentView === 'mockup'
-                  ? 'bg-white text-slate-950 font-bold shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Photo Mockup</span>
-              <span className="md:hidden">Mockup</span>
+              <span className="hidden sm:inline">Live Stats</span>
+              <span className="sm:hidden">Stats</span>
             </button>
           </nav>
 
