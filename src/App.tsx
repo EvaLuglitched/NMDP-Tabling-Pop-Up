@@ -67,9 +67,9 @@ export default function App() {
     }, 4500);
   };
 
-  // Simulates a student scanning the QR code on UC Berkeley campus
+  // Simulates a student scanning the QR code or clicking from Instagram
   const handleSimulateScan = async () => {
-    const spots = ['amazon_hub_flyer', 'campus_poster_sproul', 'moffitt_library_table'];
+    const spots = ['instagram_story', 'instagram_bio', 'instagram_qr', 'student_group'];
     const randomSpot = spots[Math.floor(Math.random() * spots.length)];
     const mockSessionId = 'sess-scan-' + Math.random().toString(36).substring(2, 8);
 
@@ -80,34 +80,36 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           source: randomSpot,
-          medium: 'qr_code',
+          medium: randomSpot === 'instagram_qr' ? 'qr_code' : 'social',
           campaign: 'nmdp_berkeley_fall26',
           sessionId: mockSessionId,
-          referrer: 'phone_camera_lens',
+          referrer: 'https://instagram.com',
         }),
       });
 
-      // Record QR scanned event
+      // Record QR / click event
       await fetch('/api/track/event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId: mockSessionId,
           type: 'qr_scanned',
-          metadata: { spot: randomSpot, device: 'mobile_safari' },
+          metadata: { spot: randomSpot, device: 'mobile_instagram' },
         }),
       });
 
       await fetchStats();
       
       const spotName = 
-        randomSpot === 'amazon_hub_flyer' 
-          ? 'Amazon Hub Locker flyer' 
-          : randomSpot === 'campus_poster_sproul' 
-          ? 'Sproul Plaza poster' 
-          : 'Moffitt Library table';
+        randomSpot === 'instagram_story' 
+          ? 'Instagram Story Link' 
+          : randomSpot === 'instagram_bio' 
+          ? 'Instagram Bio Link' 
+          : randomSpot === 'instagram_qr'
+          ? 'Instagram QR Graphic'
+          : 'Student Group Chat';
 
-      showToast(`📱 Real-Time QR Scan recorded from ${spotName}! Analytics updated.`);
+      showToast(`📱 Real-Time Engagement recorded from ${spotName}! Analytics updated.`);
     } catch (err) {
       console.error('Error simulating scan:', err);
     }

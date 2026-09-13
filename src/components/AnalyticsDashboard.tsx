@@ -167,7 +167,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Tracking QR open rates, location attribution, student pledges, and assignment metrics
+              Tracking Instagram Story links, Bio visits, QR opens, student pledges, and verified engagement metrics
             </p>
           </div>
         </div>
@@ -176,18 +176,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <button
             onClick={handleClearToZero}
             className="px-3 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-400/30 text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="清空所有数据为 0，以便开始 100% 收集真实用户的扫码与访问"
+            title="清空所有数据为 0，保持 100% 纯净真实统计"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-            <span>清空为 0 (收集真实数据)</span>
-          </button>
-          <button
-            onClick={handleResetDemo}
-            className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/15 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="恢复预置的演示种子数据"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>恢复演示数据</span>
+            <span>清空数据 (Reset to 0)</span>
           </button>
           <button
             onClick={handleExportJson}
@@ -200,9 +192,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <button
             onClick={onSimulateQrScan}
             className="px-3.5 py-1.5 rounded-full bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="测试记录一次模拟 Instagram 互动"
           >
             <Zap className="w-3.5 h-3.5 text-sky-300" />
-            + 模拟扫码
+            <span>+ 测试记录</span>
           </button>
           <button
             onClick={onRefreshStats}
@@ -218,18 +211,18 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {/* Real vs Generated Data Info Banner */}
       <div className="p-4 rounded-3xl bg-sky-950/30 border border-sky-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-300 flex-shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 flex-shrink-0">
             <Database className="w-4 h-4" />
           </div>
           <div>
             <div className="text-slate-200 font-semibold flex items-center gap-2">
-              <span>真实数据写入已就绪 (Real Database Active)</span>
-              <span className="px-2 py-0.2 rounded-full bg-white/10 text-[10px] text-sky-300 font-mono">
-                data/campaign_db.json
+              <span>100% 真实数据通道已就绪 (Real Database Ready)</span>
+              <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-[10px] text-emerald-300 font-mono">
+                Clean State
               </span>
             </div>
             <p className="text-slate-400 text-[11px] leading-relaxed mt-0.5">
-              当前后台为全栈持久化数据库。任何同学通过手机真实扫描海报二维码（附带 UTM 来源）、点击加日历或提交志愿承诺，都会立即被系统写入真实记录。如果需要 100% 纯净的真实统计，可点击上方「清空为 0」。
+              已彻底删除旧版模拟统计。当前后台为全栈持久化数据库，已准备好在 Instagram 发布。同学每次点击快拍贴纸、个人简介链接、扫描 QR 码、添加日历或提交 Swab 承诺，系统将全自动记录 100% 真实数据。
             </p>
           </div>
         </div>
@@ -405,36 +398,47 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <div className="ethereal-glass p-6 rounded-3xl space-y-4">
             <h4 className="font-editorial text-xl text-white font-medium flex items-center gap-2">
               <MapPin className="w-4 h-4 text-sky-400" />
-              Traffic by Campus Placement (QR &amp; Social)
+              Traffic by Instagram &amp; Digital Source
             </h4>
 
-            <div className="space-y-3">
-              {Object.entries(currentStats.sources).map(([sourceKey, countVal]) => {
-                const countNum = typeof countVal === 'number' ? countVal : Number(countVal) || 0;
-                const pct = currentStats.totalVisits > 0 ? Math.round((countNum / currentStats.totalVisits) * 100) : 0;
-                let label = sourceKey.replace(/_/g, ' ');
-                if (sourceKey === 'amazon_hub_flyer') label = 'Amazon Hub Locker Flyer (Event Site)';
-                if (sourceKey === 'campus_poster_sproul') label = 'Sproul Plaza Campus Notice Board';
-                if (sourceKey === 'moffitt_library_table') label = 'Moffitt Library Table Tent';
-                if (sourceKey === 'mdes_slack') label = 'Berkeley MDes Slack';
-                if (sourceKey === 'instagram_mdes') label = 'Instagram Stories & Bio';
+            {currentStats.totalVisits === 0 ? (
+              <div className="p-4 rounded-2xl bg-black/30 border border-white/10 text-center space-y-2">
+                <p className="text-xs text-slate-300 font-medium">
+                  等待在 Instagram 发布后开始记录实时来源
+                </p>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  支持 Instagram Stories 贴纸链接、Profile Bio 简介、走马灯图片 QR 码与群聊分享的实时点击归因追踪。
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(currentStats.sources).map(([sourceKey, countVal]) => {
+                  const countNum = typeof countVal === 'number' ? countVal : Number(countVal) || 0;
+                  const pct = currentStats.totalVisits > 0 ? Math.round((countNum / currentStats.totalVisits) * 100) : 0;
+                  let label = sourceKey.replace(/_/g, ' ');
+                  if (sourceKey === 'instagram_story') label = 'Instagram Story (Link Sticker)';
+                  if (sourceKey === 'instagram_bio') label = 'Instagram Profile Bio Link';
+                  if (sourceKey === 'instagram_qr') label = 'Instagram Post / Carousel QR Slide';
+                  if (sourceKey === 'student_group') label = 'Student Group Chat & DM';
+                  if (sourceKey === 'direct') label = 'Direct Web Link';
 
-                return (
-                  <div key={sourceKey} className="space-y-1">
-                    <div className="flex justify-between text-xs font-medium">
-                      <span className="text-slate-300">{label}</span>
-                      <span className="text-white font-mono">{countNum} scans ({pct}%)</span>
+                  return (
+                    <div key={sourceKey} className="space-y-1">
+                      <div className="flex justify-between text-xs font-medium">
+                        <span className="text-slate-300">{label}</span>
+                        <span className="text-white font-mono">{countNum} scans ({pct}%)</span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Device Breakdown & Micro Actions */}
@@ -539,28 +543,34 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </h4>
 
         <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-          {currentStats.recentActivities.map((act) => (
-            <div
-              key={act.id}
-              className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between text-xs"
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    act.type === 'pledge'
-                      ? 'bg-rose-400'
-                      : act.type === 'visit'
-                      ? 'bg-sky-400'
-                      : 'bg-emerald-400'
-                  }`}
-                />
-                <span className="text-slate-200 font-light">{act.text}</span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono flex-shrink-0">
-                {new Date(act.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+          {currentStats.recentActivities.length === 0 ? (
+            <div className="p-4 rounded-2xl bg-black/30 border border-white/10 text-center text-slate-400 text-xs py-6">
+              暂无活动记录。等待在 Instagram 发布后，同学每一次访问、扫码、加日历或提交 Swab 承诺都会实时滚动显示在这里。
             </div>
-          ))}
+          ) : (
+            currentStats.recentActivities.map((act) => (
+              <div
+                key={act.id}
+                className="p-3 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      act.type === 'pledge'
+                        ? 'bg-rose-400'
+                        : act.type === 'visit'
+                        ? 'bg-sky-400'
+                        : 'bg-emerald-400'
+                    }`}
+                  />
+                  <span className="text-slate-200 font-light">{act.text}</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono flex-shrink-0">
+                  {new Date(act.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

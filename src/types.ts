@@ -47,11 +47,11 @@ export interface PledgeItem {
 export type DesignTheme = 'ethereal' | 'berkeley' | 'minimalist';
 
 export type CampusSpot = 
-  | 'amazon_hub_flyer'
-  | 'campus_poster_sproul'
-  | 'moffitt_library_table'
-  | 'mdes_slack'
-  | 'instagram_mdes';
+  | 'instagram_story'
+  | 'instagram_bio'
+  | 'instagram_qr'
+  | 'student_group'
+  | 'direct';
 
 export interface SpotConfig {
   id: CampusSpot;

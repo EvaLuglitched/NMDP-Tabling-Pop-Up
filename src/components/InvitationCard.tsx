@@ -26,16 +26,16 @@ interface InvitationCardProps {
 }
 
 const CAMPUS_SPOTS: SpotConfig[] = [
-  { id: 'amazon_hub_flyer', label: 'Amazon Hub Locker (Event Site)', location: '2495 Bancroft Way', type: 'Physical Poster / Table' },
-  { id: 'campus_poster_sproul', label: 'Sproul Plaza Notice Board', location: 'Sproul Hall Bulletin', type: 'Campus Kiosk Poster' },
-  { id: 'moffitt_library_table', label: 'Moffitt Library 3rd Floor', location: 'Study Hall Tables', type: 'Flyer Handout' },
-  { id: 'mdes_slack', label: 'Berkeley MDes Community', location: 'Digital Design Studio', type: 'Social & Slack' },
-  { id: 'instagram_mdes', label: 'Instagram Stories & Linktree', location: 'UC Berkeley Bio', type: 'Digital Story' },
+  { id: 'instagram_story', label: 'Instagram Story (Link Sticker)', location: 'Instagram @nmdp_berkeley Stories', type: 'Story Link Sticker' },
+  { id: 'instagram_bio', label: 'Instagram Profile Bio Link', location: 'Instagram Bio Link / Linktree', type: 'Bio Link URL' },
+  { id: 'instagram_qr', label: 'Instagram QR Graphic Slide', location: 'Carousel Slide / Feed Post', type: 'Scannable Slide' },
+  { id: 'student_group', label: 'Student Group Chats & DMs', location: 'iMessage / WhatsApp / Slack', type: 'Direct Share' },
+  { id: 'direct', label: 'Direct Event Portal Link', location: 'Direct Web Link', type: 'Web Link' },
 ];
 
 export const InvitationCard: React.FC<InvitationCardProps> = ({ onSimulateScan, onNavigateToPortal }) => {
   const [theme, setTheme] = useState<DesignTheme>('ethereal');
-  const [selectedSpot, setSelectedSpot] = useState<CampusSpot>('amazon_hub_flyer');
+  const [selectedSpot, setSelectedSpot] = useState<CampusSpot>('instagram_story');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [customDomain, setCustomDomain] = useState<string>('');

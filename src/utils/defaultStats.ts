@@ -1,138 +1,52 @@
 import { CampaignStats, PledgeItem } from '../types';
 
 export const DEFAULT_CAMPAIGN_STATS: CampaignStats = {
-  totalVisits: 14,
-  uniqueVisitors: 11,
-  qrVisits: 10,
-  qrOpenRate: 71,
-  totalPledges: 5,
-  conversionRate: 36,
-  totalEngagedUsers: 9,
+  totalVisits: 0,
+  uniqueVisitors: 0,
+  qrVisits: 0,
+  qrOpenRate: 0,
+  totalPledges: 0,
+  conversionRate: 0,
+  totalEngagedUsers: 0,
   sources: {
-    'amazon_hub_flyer': 5,
-    'campus_poster_sproul': 3,
-    'moffitt_library_table': 2,
-    'mdes_slack': 2,
-    'instagram_mdes': 1,
-    'direct': 1,
+    'instagram_story': 0,
+    'instagram_bio': 0,
+    'instagram_qr': 0,
+    'student_group': 0,
+    'direct': 0,
   },
   devices: {
-    mobile: 11,
-    desktop: 3,
+    mobile: 0,
+    desktop: 0,
     tablet: 0,
   },
   events: {
-    calendar_add: 4,
-    map_opened: 3,
-    quiz_answered: 5,
-    share_clicked: 3,
-    invitation_downloaded: 2,
-    flyer_printed: 1,
-    qr_scanned: 10,
-    pledge_submitted: 5,
+    calendar_add: 0,
+    map_opened: 0,
+    quiz_answered: 0,
+    share_clicked: 0,
+    invitation_downloaded: 0,
+    flyer_printed: 0,
+    qr_scanned: 0,
+    pledge_submitted: 0,
   },
-  recentActivities: [
-    {
-      id: 'a-1',
-      time: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
-      type: 'pledge',
-      text: 'Pledge from Chloe W. (Undergraduate)',
-      source: 'amazon_hub_flyer',
-    },
-    {
-      id: 'a-2',
-      time: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-      type: 'interaction',
-      text: 'Synced Tabling to Google Calendar',
-      source: 'site_interaction',
-    },
-    {
-      id: 'a-3',
-      time: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-      type: 'visit',
-      text: 'Visit via Amazon Hub Flyer (mobile)',
-      source: 'amazon_hub_flyer',
-    },
-    {
-      id: 'a-4',
-      time: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-      type: 'pledge',
-      text: 'Pledge from Dr. Marcus S. (Faculty / Staff)',
-      source: 'amazon_hub_flyer',
-    },
-    {
-      id: 'a-5',
-      time: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-      type: 'interaction',
-      text: 'Opened directions to 2495 Bancroft Way',
-      source: 'site_interaction',
-    },
-  ],
+  recentActivities: [],
   lastUpdated: new Date().toISOString(),
 };
 
-export const DEFAULT_PLEDGES: PledgeItem[] = [
-  {
-    id: 'p-1',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 32).toISOString(),
-    name: 'Maya L.',
-    affiliation: 'Graduate / MDes',
-    timePreference: '10:00 - 10:30 AM',
-    reminderType: 'email',
-    contactMasked: 'm***@berkeley.edu',
-    pledgeNote: 'Excited to support fellow MDes students and sign up for the registry!',
-    source: 'mdes_slack',
-  },
-  {
-    id: 'p-2',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
-    name: 'Kevin T.',
-    affiliation: 'Undergraduate',
-    timePreference: '11:00 - 11:30 AM',
-    reminderType: 'sms',
-    contactMasked: '(510) ***-4892',
-    pledgeNote: 'Will swing by between EECS classes at Amazon Locker!',
-    source: 'campus_poster_sproul',
-  },
-  {
-    id: 'p-3',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-    name: 'Elena R.',
-    affiliation: 'Undergraduate',
-    timePreference: '10:30 - 11:00 AM',
-    reminderType: 'email',
-    contactMasked: 'e***@berkeley.edu',
-    pledgeNote: 'Honoring blood cancer awareness month. Swab takes 30 seconds!',
-    source: 'amazon_hub_flyer',
-  },
-  {
-    id: 'p-4',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 11).toISOString(),
-    name: 'Dr. Marcus S.',
-    affiliation: 'Faculty / Staff',
-    timePreference: '11:30 - 12:00 PM',
-    reminderType: 'calendar_only',
-    contactMasked: 'm***@berkeley.edu',
-    pledgeNote: 'Happy to encourage students to join NMDP.',
-    source: 'amazon_hub_flyer',
-  },
-  {
-    id: 'p-5',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    name: 'Chloe W.',
-    affiliation: 'Undergraduate',
-    timePreference: 'Flexible drop-in',
-    reminderType: 'email',
-    contactMasked: 'c***@berkeley.edu',
-    pledgeNote: 'Saw the QR poster outside Amazon locker, ready to get swabbed!',
-    source: 'amazon_hub_flyer',
-  },
-];
+export const DEFAULT_PLEDGES: PledgeItem[] = [];
+
+const STATS_STORAGE_KEY = 'nmdp_real_stats_v1';
+const PLEDGES_STORAGE_KEY = 'nmdp_real_pledges_v1';
 
 export function getInitialStats(): CampaignStats {
   if (typeof window === 'undefined') return DEFAULT_CAMPAIGN_STATS;
   try {
-    const cached = localStorage.getItem('nmdp_cached_stats');
+    // Clear out legacy fake stats caches if present
+    localStorage.removeItem('nmdp_cached_stats');
+    localStorage.removeItem('nmdp_cached_pledges');
+
+    const cached = localStorage.getItem(STATS_STORAGE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed && typeof parsed.totalVisits === 'number') {
@@ -148,7 +62,7 @@ export function getInitialStats(): CampaignStats {
 export function cacheStatsLocally(stats: CampaignStats): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem('nmdp_cached_stats', JSON.stringify(stats));
+    localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(stats));
   } catch (e) {
     // Ignore storage quota
   }
@@ -157,10 +71,10 @@ export function cacheStatsLocally(stats: CampaignStats): void {
 export function getInitialPledges(): PledgeItem[] {
   if (typeof window === 'undefined') return DEFAULT_PLEDGES;
   try {
-    const cached = localStorage.getItem('nmdp_cached_pledges');
+    const cached = localStorage.getItem(PLEDGES_STORAGE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
@@ -173,7 +87,7 @@ export function getInitialPledges(): PledgeItem[] {
 export function cachePledgesLocally(pledges: PledgeItem[]): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem('nmdp_cached_pledges', JSON.stringify(pledges));
+    localStorage.setItem(PLEDGES_STORAGE_KEY, JSON.stringify(pledges));
   } catch (e) {
     // Ignore storage quota
   }
@@ -183,17 +97,29 @@ export function generateInstantSummary(
   stats: CampaignStats, 
   tone: 'standard' | 'impact' | 'design'
 ): string {
-  const mobileCount = stats.devices?.mobile || stats.qrVisits || 0;
+  const mobileCount = stats.devices?.mobile || 0;
   const calAdds = stats.events?.calendar_add || 0;
   
+  if (stats.totalVisits === 0) {
+    if (tone === 'impact') {
+      return `For our September Blood & Pediatric Cancer Awareness drive on the UC Berkeley campus, we engineered an interactive invitation system to recruit prospective stem cell donors outside the Amazon Hub Locker (2495 Bancroft Way). Recognizing that a blood cancer diagnosis occurs every 3-4 minutes, the outreach strategy is prepared for launch across Instagram Stories, profile bio links, and direct digital messaging to capture genuine student participation. Once shared, this real-time analytics engine will automatically measure authentic traffic, direct QR code opens, and student registry commitments. Incoming student pledges and calendar synchronizations will be dynamically recorded and visualized on this live dashboard. This targeted digital rollout directly validates how focused social and mobile calls-to-action can mobilize university communities for life-saving donor recruitment.`;
+    }
+    if (tone === 'design') {
+      return `As UC Berkeley Master of Design (MDes) students, we crafted a twilight ethereal visual system pairing a graphic invitation with a mobile-first digital event portal to drive attendance for the NMDP tabling drive. The campaign is formatted for immediate Instagram distribution via Stories, profile bio links, and encoded QR slides directing peers to interactive myth-busting modules and event logistics. The frontend connects to a real-time database configured to log 100% authentic student interactions, device attributions, and registry pledges. Once published to social channels, this live analytics environment will track viewer progression through the invitation funnel. The system demonstrates how thoughtful typography and low-friction mobile interactions heighten participation in campus public health activations.`;
+    }
+    // Default Standard tone
+    return `For the upcoming NMDP Tabling Session, I designed a multi-channel invitation campaign featuring a clean visual poster and an interactive mobile landing page to drive awareness for Blood Cancer and Pediatric Cancer Awareness Month. The invitation is configured for distribution across Instagram Stories, profile bio links, and direct digital channels, directing students to tabling logistics outside the Amazon Hub Locker (2495 Bancroft Way) and educational facts regarding blood stem cell donation. Once shared on Instagram, this real-time analytics dashboard will automatically record live views, QR opens, and registry pledges. By pairing urgent medical facts—such as a blood cancer diagnosis occurring every 3-4 minutes—with approachable graphic design, the invitation is prepared to foster community interest in joining the NMDP Registry.`;
+  }
+
+  // When live visits have occurred
   if (tone === 'impact') {
-    return `For our September Blood & Pediatric Cancer Awareness drive on the UC Berkeley campus, we deployed an interactive invitation system to recruit prospective stem cell donors outside the Amazon Hub Locker (2495 Bancroft Way). Recognizing that a blood cancer diagnosis occurs every 3-4 minutes, the campaign prioritized rapid education and on-site commitment. The campaign recorded ${stats.totalVisits} total engagements, yielding ${stats.qrVisits} direct QR scans and ${stats.totalPledges} confirmed student pledges to join the NMDP registry. With ${calAdds} attendees syncing the tabling session to their personal calendars, the outreach successfully converted awareness into tangible commitments from undergraduate and graduate students alike. This responsive engagement validates how targeted on-campus digital prompts can directly expand the donor registry pool.`;
+    return `For our September Blood & Pediatric Cancer Awareness drive on the UC Berkeley campus, we deployed an interactive invitation system to recruit prospective stem cell donors outside the Amazon Hub Locker (2495 Bancroft Way). Recognizing that a blood cancer diagnosis occurs every 3-4 minutes, the campaign prioritized rapid education and direct mobile commitment across Instagram. The campaign has recorded ${stats.totalVisits} verified visits, yielding ${stats.qrVisits} direct QR scans and ${stats.totalPledges} confirmed student pledges to join the NMDP registry. With ${calAdds} attendees syncing the tabling session to their personal calendars, the outreach successfully converted digital impressions into tangible commitments. This responsive engagement validates how targeted social prompts can directly expand the donor registry pool.`;
   }
 
   if (tone === 'design') {
-    return `As UC Berkeley Master of Design (MDes) students, we crafted a twilight ethereal visual system pairing a physical poster with a mobile-first digital event portal to drive attendance for the NMDP tabling drive. The invitation employed dynamic QR codes placed across high-traffic transit nodes, including Sproul Plaza, Moffitt Library, and the Amazon Hub Locker, directing passersby to interactive myth-busting modules and swift registration. Across the campaign tracking window, the interface gathered ${stats.totalVisits} interactions, with mobile devices accounting for ${mobileCount} visits (${stats.qrOpenRate}% QR open rate). Furthermore, ${stats.totalPledges} students submitted pledges to be swabbed on Monday, Sept 21 between 10am-12pm. The iteration demonstrated how high-contrast typography and low-friction micro-interactions significantly heighten participation in public health activations.`;
+    return `As UC Berkeley Master of Design (MDes) students, we crafted a twilight ethereal visual system pairing a digital invitation with a mobile-first event portal to drive attendance for the NMDP tabling drive. The campaign deployed Instagram Stories, profile bio links, and encoded QR graphics to direct students to interactive myth-busting modules and swift registration. Across the active tracking window, the interface gathered ${stats.totalVisits} verified interactions, with mobile devices accounting for ${mobileCount} visits (${stats.qrOpenRate}% QR open rate). Furthermore, ${stats.totalPledges} students submitted pledges to be swabbed on Monday, Sept 21 between 10am-12pm. The iteration demonstrated how high-contrast typography and low-friction mobile micro-interactions heighten participation in campus public health activations.`;
   }
 
-  // Default Standard tone
-  return `For the upcoming NMDP Tabling Session, I designed a multi-channel invitation campaign featuring a clean visual poster and an interactive mobile landing page to drive awareness for Blood Cancer and Pediatric Cancer Awareness Month. The invitation featured an encoded QR code deployed across high-traffic Berkeley campus locations, directing students to event logistics outside the Amazon Hub Locker (2495 Bancroft Way) and educational facts regarding blood stem cell donation. Over the campaign tracking period, the invitation generated ${stats.totalVisits} total views and ${stats.qrVisits} direct QR scans, with ${mobileCount} visits originating from mobile devices on campus. The campaign achieved strong participation with ${stats.totalPledges} students submitting pledges to stop by and get swabbed, while ${calAdds} students synced the tabling session to their calendars. By pairing urgent medical facts with approachable graphic design, the invitation successfully fostered community interest in joining the NMDP Registry.`;
+  // Default Standard tone with active stats
+  return `For the upcoming NMDP Tabling Session, I designed a digital invitation campaign featuring a clean visual poster and an interactive mobile landing page to drive awareness for Blood Cancer and Pediatric Cancer Awareness Month. The invitation was distributed across Instagram Stories, profile bio links, and direct channels, directing students to event logistics outside the Amazon Hub Locker (2495 Bancroft Way) and educational facts regarding blood stem cell donation. Over the campaign tracking period, the invitation generated ${stats.totalVisits} verified views and ${stats.qrVisits} direct QR scans, with ${mobileCount} visits originating from mobile devices. The campaign achieved strong participation with ${stats.totalPledges} students submitting pledges to stop by and get swabbed, while ${calAdds} students synced the tabling session to their calendars. By pairing urgent medical facts with approachable graphic design, the invitation successfully fostered community interest in joining the NMDP Registry.`;
 }
