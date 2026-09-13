@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Navbar, AppView } from './components/Navbar';
 import { StartSavingLivesView } from './components/StartSavingLivesView';
 import { InvitationCard } from './components/InvitationCard';
@@ -120,6 +121,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#070b10] text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
+      <Analytics />
       {/* Ambient background aura lights */}
       <div className="fixed top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-sky-600/10 blur-[140px] pointer-events-none" />
       <div className="fixed bottom-0 right-1/4 w-[600px] h-[600px] rounded-full bg-indigo-900/15 blur-[160px] pointer-events-none" />
