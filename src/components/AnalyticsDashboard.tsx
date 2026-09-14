@@ -5,16 +5,12 @@ import {
   Calendar,
   MapPin,
   Heart,
-  Sparkles,
-  Copy,
-  CheckCircle2,
   RefreshCw,
   Smartphone,
   Layers,
   FileText,
   Activity,
   Zap,
-  ArrowRight,
   Database,
   Trash2,
   Download,
@@ -28,7 +24,6 @@ import {
   DEFAULT_CAMPAIGN_STATS, 
   getInitialPledges, 
   cachePledgesLocally, 
-  generateInstantSummary 
 } from '../utils/defaultStats';
 
 interface AnalyticsDashboardProps {
@@ -45,22 +40,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   onSimulateQrScan,
 }) => {
   const currentStats = stats || DEFAULT_CAMPAIGN_STATS;
-  const [copiedReport, setCopiedReport] = useState(false);
-  const [reportTone, setReportTone] = useState<'standard' | 'impact' | 'design'>('standard');
-  const [generatedSummary, setGeneratedSummary] = useState<string>(() =>
-    generateInstantSummary(currentStats, 'standard')
-  );
-  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [pledgesList, setPledgesList] = useState<PledgeItem[]>(() => getInitialPledges());
   const [activeTab, setActiveTab] = useState<'overview' | 'pledges'>('overview');
   const [adminTokenInput, setAdminTokenInput] = useState<string>(() => getAdminToken());
   const [adminUnlocked, setAdminUnlocked] = useState<boolean>(() => Boolean(getAdminToken()));
   const [adminError, setAdminError] = useState<string>('');
-
-  // Keep summary synchronized in 0ms whenever stats or tone changes
-  useEffect(() => {
-    setGeneratedSummary(generateInstantSummary(currentStats, reportTone));
-  }, [currentStats.totalVisits, currentStats.qrVisits, currentStats.totalPledges, reportTone]);
 
   useEffect(() => {
     fetchPledges();
@@ -84,40 +68,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     } finally {
       clearTimeout(timeoutId);
     }
-  };
-
-  // Optional on-demand AI refinement via Gemini
-  const handleRegenerateWithAi = async () => {
-    setIsGeneratingSummary(true);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
-    try {
-      const res = await adminFetch('/api/generate-summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ style: reportTone }),
-        signal: controller.signal,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.summary) {
-          setGeneratedSummary(data.summary);
-        }
-      }
-    } catch (err) {
-      console.debug('AI generation skipped or timed out, keeping high-quality report:', err);
-    } finally {
-      clearTimeout(timeoutId);
-      setIsGeneratingSummary(false);
-    }
-  };
-
-  const handleCopyReport = () => {
-    if (!generatedSummary) return;
-    navigator.clipboard.writeText(generatedSummary);
-    setCopiedReport(true);
-    trackEvent('share_clicked', { channel: 'copy_assignment_report' });
-    setTimeout(() => setCopiedReport(false), 2200);
   };
 
   const handleUnlockAdmin = async () => {
@@ -359,98 +309,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </div>
       </div>
 
-      {/* AI Agent Report Card (Directly Mirroring Screen 3's Glowing AI Orb & Text Generation Widget) */}
-      <div className="ethereal-card-gradient rounded-[36px] p-7 sm:p-10 border border-white/15 shadow-2xl space-y-6 relative overflow-hidden">
-        {/* Glowing Orb Center Header */}
-        <div className="flex flex-col items-center text-center space-y-3">
-          <div className="relative w-16 h-16 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-sky-400/30 blur-lg animate-pulse" />
-            <div className="relative w-12 h-12 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-600 border border-white/40 flex items-center justify-center shadow-lg">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <div className="text-xs font-semibold tracking-widest uppercase text-sky-200">
-            Echo • AI Campaign Synthesis
-          </div>
-          <h3 className="font-editorial text-2xl sm:text-3xl text-white font-normal max-w-lg leading-snug">
-            Required 3 to 6 Sentence Assignment &amp; Google Slide Deck Report
-          </h3>
-          <p className="text-xs text-slate-300 max-w-md leading-relaxed font-light">
-            Synthesizes your invitation design, campus deployment, and live database interactions into the exact 3–6 sentences needed for your course submission.
-          </p>
-        </div>
-
-        {/* Tone Selector & Copy Button */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-          <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-full border border-white/10">
-            <button
-              onClick={() => setReportTone('standard')}
-              className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                reportTone === 'standard' ? 'bg-white text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Standard
-            </button>
-            <button
-              onClick={() => setReportTone('impact')}
-              className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                reportTone === 'impact' ? 'bg-white text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Impact
-            </button>
-            <button
-              onClick={() => setReportTone('design')}
-              className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                reportTone === 'design' ? 'bg-white text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Design &amp; UX
-            </button>
-          </div>
-
-          <button
-            onClick={handleCopyReport}
-            className="px-5 py-2.5 rounded-full bg-white hover:bg-slate-100 text-slate-950 font-semibold text-xs transition-all shadow-lg flex items-center gap-2 cursor-pointer"
-          >
-            {copiedReport ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                Copied to Clipboard!
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                Copy for Google Slides
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* The Text Box */}
-        <div className="p-6 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/15 relative">
-          {isGeneratingSummary ? (
-            <div className="py-6 flex items-center justify-center gap-2 text-xs text-sky-200">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              Synthesizing live interaction metrics into assignment reflection...
-            </div>
-          ) : (
-            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-light select-all">
-              {generatedSummary}
-            </p>
-          )}
-
-          <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              Length: exactly 5 sentences • Meets 3–6 sentence assignment requirement
-            </span>
-            <span className="font-mono text-sky-300">
-              {currentStats.totalVisits} views | {currentStats.qrVisits} QR scans | {currentStats.totalPledges} pledges
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* Tabs for Detailed Breakdown */}
       <div className="flex border-b border-white/10">
